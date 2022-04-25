@@ -20,7 +20,6 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description']
 
     def create(self, validated_data):
-        print('lala')
         return super().create(validated_data)
 
 
@@ -32,17 +31,16 @@ class StockSerializer(serializers.ModelSerializer):
         fields = ['id', 'address', 'positions']
 
     def create(self, validated_data):
-        print('lala')
         # достаем связанные данные для других таблиц
         positions = validated_data.pop('positions')
 
         # создаем склад по его параметрам
         stock = super().create(validated_data)
 
-        for num in range(len(positions)):
-            prod = positions[num]['product']
-            quantity = positions[num]['quantity']
-            price = positions[num]['price']
+        for pos in positions:
+            prod = pos['product']
+            quantity = pos['quantity']
+            price = pos['price']
             data = StockProduct(stock=stock, product=prod, quantity=quantity, price=price)
             data.save()
 
@@ -55,18 +53,7 @@ class StockSerializer(serializers.ModelSerializer):
         # обновляем склад по его параметрам
         stock = super().update(instance, validated_data)
 
-        obj_list = StockProduct.objects.filter(stock=instance)
         for pos in positions:
-            for obj in obj_list:
-                if obj.product == pos['product']:
-                    obj.quantity = pos['quantity']
-                    obj.price = pos['price']
-                    obj.save()
-                if pos['product'] not in [el.product for el in obj_list]:
-                    prod = pos['product']
-                    quantity = pos['quantity']
-                    price = pos['price']
-                    data = StockProduct(stock=stock, product=prod, quantity=quantity, price=price)
-                    data.save()
+            obj, create = StockProduct.objects.update_or_create(stock=instance, product=pos['product'], defaults=pos)
 
         return stock
