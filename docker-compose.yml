@@ -14,7 +14,7 @@ services:
     depends_on:
       - db
   nginx:
-    image: docker3
+    image: stocksproducts2
     ports:
       - 80:80
     depends_on:
